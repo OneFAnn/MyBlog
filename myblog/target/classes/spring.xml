@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		                    http://www.springframework.org/schema/beans/spring-beans.xsd
+		                    http://www.springframework.org/schema/context 
+		                    http://www.springframework.org/schema/context/spring-context.xsd
+		                    http://www.springframework.org/schema/tx 
+		                    http://www.springframework.org/schema/tx/spring-tx.xsd
+		                    http://www.springframework.org/schema/aop 
+		                    http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<!-- 引入属性文件
+	<context:property-placeholder location="classpath:config.properties" /> -->
+
+	<!-- 自动扫描dao和service包(自动注入) -->
+	<context:component-scan base-package="dao,service" />
+
+	<!-- 创建sessionFactory 这是spring整合hibernate的入口 -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="configLocation">
+			<value>
+				classpath:hibernate.cfg.xml
+			</value>
+		</property>
+		<!-- 自动扫描注解方式配置的hibernate类文件 -->
+		<property name="packagesToScan">
+			<list>
+				<value>domain</value>
+			</list>
+		</property>
+
+		<!-- 自动扫描hbm方式配置的hibernate文件和.hbm文件 -->
+		<!-- <property name="mappingDirectoryLocations"> <list> <value>classpath:sy/hbm</value> 
+			</list> </property> -->
+	</bean>
+
+	<!-- 创建事物管理器 -->
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<!-- 已注解的形式管理事务 -->
+	<!--<tx:annotation-driven transaction-manager="txManager" /> -->
+	<!-- 拦截器方式配置事物 -->
+	<tx:advice id="transactionAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="add*" />
+			<tx:method name="save*" />
+			<tx:method name="update*" />
+			<tx:method name="modify*" />
+			<tx:method name="edit*" />
+			<tx:method name="delete*" />
+			<tx:method name="remove*" />
+			<tx:method name="repair*" />
+			<tx:method name="deleteAndRepair" />	
+			<tx:method name="get*" />
+			<tx:method name="find*"  />
+			<tx:method name="list*" />
+			<tx:method name="load*"  />
+			<tx:method name="search*" />
+			<tx:method name="datagrid*" />
+			<tx:method name="*" propagation="SUPPORTS" />
+			
+			<tx:method name="*" rollback-for="Exception"/><!--默认回滚机制是RuntimeException-->  
+		</tx:attributes>
+	</tx:advice>
+	<aop:config>
+		<!-- 只对业务逻辑层实施事务 -->
+		<aop:pointcut id="transactionPointcut" expression="execution(* service..*Impl.*(..))" />
+		<!-- Advisor定义，切入点和通知分别为txPointcut、txAdvice -->
+		<aop:advisor pointcut-ref="transactionPointcut"
+			advice-ref="transactionAdvice" />
+	</aop:config>
+
+</beans>
